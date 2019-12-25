@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>uGym 參加會員</title>
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
+  <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+
+  <link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css" />
+  <script src="https://code.jquery.com/jquery-1.12.3.min.js"></script>
+  <script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+
+  <script src="js/jquery.twzipcode.min.js"></script>
+
+  <link rel="stylesheet" href="css/loading.css" />
+  <script src="js/loading.js"></script>
+</head>
+
+<body>
+
+  <!--  ==================== 新增會員 (HTML)=============================-->
+  <div style=" font-family:'Noto Sans TC'">
+    <h2>參加會員</h2>
+    <hr>
+    <div id="addMember" style="font-size: 20px;width: 100%">
+      <div class="courseLabel">姓名(必填)</div> <input id="newMemberName" class="courseInput" type="text" placeholder="請輸入您的姓名"><br>
+      <div class="courseLabel">性別</div>
+      <select id="newMemberGender" class="courseInput" name="newMemberGender" style="width: 413px;height: 38px">
+        <option value="男">男</option>
+        <option value="女">女</option>
+        <option value="不透漏">不透漏</option>
+      </select><br>
+
+      <div class="courseLabel">生日</div> <input id="newMemberBirth" class="courseInput" type="text" placeholder="請輸入生日，例如 2019-01-01"><br>
+
+      <div class="courseLabel">電話</div> <input id="newMemberPhoneNum" class="courseInput" type="text" placeholder="請輸入電話"><br>
+
+      <div class="courseLabel">身分字號</div> <input id="newMemberIdNum" class="courseInput" type="text" placeholder="請輸入身分字號"><br>
+      <div style="margin-left: 130px">*身分字號僅作為保險使用，不用做其他用途</div><br>
+
+      <div class="courseLabel">地址</div>
+      <div id="twzipcode"></div>
+      <br>
+      <input id="newMemberAssress" class="courseInput" type="text" placeholder="請輸入地址" style="margin-top: 0; margin-bottom: 50px">
+      <br>
+      <button class="btn-blue" onclick="addConfirm()" style="margin-left: 130px; width: 415px">確定</button>
+    </div>
+  </div>
+  <!--  ==================== 新增會員 (HTML)=============================-->
+
+  <div id="finishMessage">
+    <h2>已加入會員，謝謝!</h2>
+  </div>
+
+  <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
+
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-app.js"></script>
+
+  <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+  <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-analytics.js"></script>
+
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-firestore.js"></script>
+
+
+  <!-- Firebase Operations-->
+  <script src="js/firebase-ops.js"></script>
+
+  <script>
+    var memberData = [];
+    var dataToAdd = [];
+    var userIdString = location.search;
+
+    var userId = userIdString.split("=");
+    if (userId[0] == "?UserId") {
+      console.log("valid UserId ", userId[1]);
+    }
+
+    $("#finishMessage").hide();
+
+    $('#twzipcode').twzipcode({
+      'css': [
+        'pulldownMenu', //縣市
+        'pulldownMenu', // 鄉鎮市區
+        'addr-zip' // 郵遞區號
+      ]
+    });
+
+    $("#twzipcode").twzipcode('set', {
+      'county': '臺北市',
+      'district': '信義區',
+      'zipcode': 110
+    });
+
+
+    //console.log($("#twzipcode").twzipcode('get', ['county', 'district']));
+
+    function addConfirm() {
+      console.log("addConfirm");
+      // TODO: 檢查資料格式     
+      if ($("#newMemberName").val() == "") {
+        alert("姓名為必填!");
+        return 0;
+      }
+      // TODO: 檢查是否已是會員
+      var toRead = 1;
+      var readTimes = 0;
+
+      $.loading.start('Loading data');
+      firebase.database().ref('users/林口運動中心/客戶管理').once('value').then(function(snapshot) {
+        console.log("member read done");
+        readTimes++;
+        var result = snapshot.val();
+        memberData = JSON.parse(result.會員資料);
+
+        if (readTimes == toRead) $.loading.end();
+
+        var alreadyIsMember = false;
+        for (var i = 0; i < memberData.length; i++) {
+          //console.log(i, memberData[i][0]);
+          if (memberData[i][0] == $("#newMemberName").val()) {
+            alert(memberData[i][0] + " 已經是會員了")
+            alreadyIsMember = true;
+            break;
+          }
+        }
+
+        if (!alreadyIsMember) {
+          dataToAdd = [
+            $("#newMemberName").val(),
+            userId[1],
+            $("#newMemberGender").val(),
+            $("#newMemberBirth").val(),
+            $("#newMemberPhoneNum").val(),
+            $("#newMemberIdNum").val(),
+            $("#twzipcode").twzipcode('get', ['county', 'district']) + "," + $("#newMemberAssress").val(),
+          ];
+
+          //console.log(dataToAdd);
+          memberData.push(dataToAdd);
+          
+          // 會員資料寫入資料庫 sandbox
+//          database.ref('sandbox').set({
+//            會員資料: JSON.stringify(memberData),
+//          }, function(error) {
+//            if (error) {
+//              console.log("Write to database error");
+//              courseData.pop();
+//            }
+//            console.log('Write to database successful');
+//          });
+
+          $("#addMember").hide();
+          $("#finishMessage").show();
+        }
+
+      });
+
+    };
+  </script>
+</body>
+
+</html>
