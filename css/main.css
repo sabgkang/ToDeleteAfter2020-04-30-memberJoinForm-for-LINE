@@ -10,7 +10,7 @@ h2 {
   font-family: 'Noto Sans TC';
 }
 
-.courseInput {
+.formInput {
   height: 30px;
   width: 400px;
   font-size: 20px;
@@ -19,7 +19,7 @@ h2 {
   font-family: 'Noto Sans TC';
 }
 
-.courseLabel {
+.formLabel {
   font-weight: bold;
   float: left;
   width: 100px;
