@@ -56,7 +56,6 @@
     var memberData = [];
     var dataToAdd = [];
     var paramToSend;
-    var paramToSend;
     var userIdString = location.search;
     
 
@@ -98,13 +97,14 @@
       
       countyDistrict = $("#twzipcode").twzipcode('get', ['county', 'district']);
       
-      paramToSend = "?UserId=" + userId[1] 
-                      + "&Name="   + $("#memberName").val()
-                      + "&Gender=" + $("#memberGender").val()  
-                      + "&Birth="  + $("#memberBirth").val()
-                      + "&Phone="  + $("#memberPhoneNum").val()
-                      + "&ID="     + $("#memberIdNum").val()    + "\n"
-                      + "&Address="+ countyDistrict[0] + " " +countyDistrict[1] + " " + $("#memberAddress").val()                
+      paramToSend = "?API=01"
+                  + "&UserId=" + userId[1] 
+                  + "&Name="   + $("#memberName").val()
+                  + "&Gender=" + $("#memberGender").val()  
+                  + "&Birth="  + $("#memberBirth").val()
+                  + "&Phone="  + $("#memberPhoneNum").val()
+                  + "&ID="     + $("#memberIdNum").val()    + "\n"
+                  + "&Address="+ countyDistrict[0] + " " +countyDistrict[1] + " " + $("#memberAddress").val()                
       ;
       
       var profile = "請確認會員資料:\n"
@@ -119,26 +119,41 @@
       console.log(paramToSend);
       
       //window.location("https://member-join-form-for-line.herokuapp.com/"+paramToSend);
+      //webCourseAPI();      
       
-      if (confirm(profile)){
-        $("#memberForm").hide();
-        $("#finishMessage").css("display", "block");        
-      }
+      if (confirm(profile)) {
+        
+        // call API
+        var request = new XMLHttpRequest()
+        request.open('GET', 'https://member-join-form-for-line.herokuapp.com/'+paramToSend, true)
+
+        request.onload = function() {
+          console.log(this.response);
+
+            if (this.response !="寫入資料庫 OK") alert("寫入資料庫 錯誤")                
+            $("#memberForm").hide();
+            $("#finishMessage").css("display", "block");        
+        }
+
+        // Send request
+        request.send();
+          
+      };
+
     }; 
     
-    function testAPI () {
-      var request = new XMLHttpRequest()
-      request.open('GET', 'https://member-join-form-for-line.herokuapp.com/?aaa=bbb', true)
-
-      request.onload = function() {
-        // Begin accessing JSON data here
-        console.log(this.response);
-
-      }
-
-      // Send request
-      request.send();
-    }    
+//    http://localhost:5000/?API=01&UserId=line12345&Name=%E5%B0%8F%E9%84%AD&Gender=%E7%94%B7&Birth=2019-01-01&Phone=095555555&ID=A120000000%20&Address=%E6%96%B0%E7%AB%B9%E5%B8%82%20%E6%9D%B1%E5%8D%80%20%E4%B8%AD%E5%A4%AE%E8%B7%AF
+//    function webCourseAPI () {
+//      var request = new XMLHttpRequest()
+//      request.open('GET', 'https://member-join-form-for-line.herokuapp.com/'+paramToSend, true)
+//
+//      request.onload = function() {
+//        console.log(this.response);
+//      }
+//
+//      // Send request
+//      request.send();
+//    }    
     
   </script>
 </body>
