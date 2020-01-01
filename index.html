@@ -39,38 +39,34 @@
       <div class="formLabel" style="margin-top: 0; margin-bottom: 40px;">&nbsp</div><input id="memberAddress" class="formInput" type="text" placeholder="請輸入地址" style="margin-top: 0; margin-bottom: 50px;">
       <br>
       <button class="btn-blue" onclick="addConfirm()" style="margin-left: 250px; width: 635px">確定</button>
+      <div style="margin-left: 250px; font-size: 30px;">*隱私權及資料使用說明</div><br>
       
     </div>
   </div>
   <!--  ==================== 新增會員 (HTML)=============================-->
 
   <div id="finishMessage" style="display: none">
-    <h1 style="text-align: left">您已加入會員，謝謝!</h1>
+    <h1 style="text-align: left">您已成功加入會員，謝謝!</h1>
   </div>
   
   <div id="ErrorMessage" style="display: none">
     <h1 style="text-align: left">錯誤</h1>
-  </div> 
+  </div>    
+
+  <div id="alreadyMessage" style="display: none">
+    <h1 style="text-align: left">您以前已經加入會員!</h1>
+  </div>
 
   <script>
     var memberData = [];
     var dataToAdd = [];
     var paramToSend;
-    var userIdString = location.search;
+    var inputParamString = location.search;    
+    //var userIdString = location.search;        
+
+    $("#finishMessage").hide(); 
     
-
-    $("#finishMessage").hide();    
-    
-    var userId = userIdString.split("=");
-    if (userId[0] == "?UserId") {
-      console.log("valid UserId ", userId[1]);
-
-    } else {
-      $("#memberForm").hide();
-      $("#ErrorMessage").css("display", "block");   
-      alert("No LINE ID!!");   
-    }
-
+    // 初始化 TWZIPCODE
     $('#twzipcode').twzipcode({
       'css': [
         'pulldownMenu', //縣市
@@ -83,10 +79,60 @@
       'county': '臺北市',
       'district': '信義區',
       'zipcode': 110
-    });
+    });    
+    // 初始化 TWZIPCODE : 結束
+    
+    // 處理輸入參數
+    var inputParam = inputParamString.split("&");
+    // inputParam[0]="?displayName=..."
+    // inputParam[1]="userId=..."
+    // inputParam[2]="pictureUrl=..."
+    
+    var displayName = inputParam[0].split("=");
+    var userId      = inputParam[1].split("=");
+    var pictureUrl  = inputParam[2].split("=");    
+    
+    console.log(displayName, userId, pictureUrl);
+    
+    if (userId[0] == "userId") {
+      console.log("valid UserId ", userId[1]);
+      
+      checkUserIdExist();
+     
+      $("#memberName").val(decodeURI(displayName[1]));
+
+
+    } else {
+      $("#memberForm").hide();
+      $("#ErrorMessage").css("display", "block");   
+      alert("No LINE ID!!");   
+    }
+
 
     //console.log($("#twzipcode").twzipcode('get', ['county', 'district']));
 
+    function checkUserIdExist() {
+      //Call API:00 檢查 userId 有沒有重複參加 */
+       
+      paramToSend = "?API=00" + "&UserId=" + userId[1];
+
+      var request = new XMLHttpRequest()
+      //request.open('GET', 'https://api-ugym-courses.herokuapp.com/'+paramToSend, true)
+      request.open('GET', 'http://localhost:5000'+paramToSend, true)
+      
+      request.onload = function() {
+        console.log(this.response);
+        if (this.response == "API:00 會員已存在") {
+          alert("您以前已經加入會員!");     
+          $("#memberForm").hide();
+          $("#alreadyMessage").css("display", "block");  
+        }
+      }
+
+      // Send API request 
+      request.send();      
+    }
+    
     function addConfirm() {
       console.log("addConfirm");
       // TODO: 檢查資料格式     
@@ -123,14 +169,15 @@
       
       if (confirm(profile)) {
         
-        // call API
+        // call API:01
         var request = new XMLHttpRequest()
-        request.open('GET', 'https://member-join-form-for-line.herokuapp.com/'+paramToSend, true)
+        //request.open('GET', 'https://api-ugym-courses.herokuapp.com/'+paramToSend, true)
+        request.open('GET', 'http://localhost:5000'+paramToSend, true)
 
         request.onload = function() {
           console.log(this.response);
 
-            if (this.response !="寫入資料庫 OK") alert("寫入資料庫 錯誤")                
+            if (this.response !="API:01 會員寫入成功") alert("會員加入失敗，請洽管理員")                
             $("#memberForm").hide();
             $("#finishMessage").css("display", "block");        
         }
